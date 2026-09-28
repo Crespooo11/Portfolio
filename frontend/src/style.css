@@ -263,6 +263,15 @@ nav a,
   justify-content: center;
   padding: 60px max(32px, 3vw) 70px;
 }
+.hero-name-wrap {
+  position: relative;
+  max-width: 20ch;
+  /* Scales with the name's own font-size (clamp(3.4rem, 12vw, 10.5rem))
+     so the reveal circle stays a tight, localized spotlight relative to
+     each line's height instead of a fixed radius that either swamps the
+     name on huge screens or barely shows on small ones. */
+  --mask-radius: clamp(70px, 7vw, 120px);
+}
 .hero-name {
   margin: 0;
   font-family: "Anton", sans-serif;
@@ -271,10 +280,46 @@ nav a,
   line-height: 0.86;
   letter-spacing: 0;
   font-size: clamp(3.4rem, 12vw, 10.5rem);
-  max-width: 20ch;
 }
-.hero-name .char {
-  will-change: transform, opacity;
+/* Base layer: always visible from the first frame, no animation to
+   stall or half-complete on a hard reload. */
+.hero-name--outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #fff;
+}
+/* Solid-white layer, positioned exactly on top of the outline and
+   revealed only inside a circle that follows the cursor via a
+   radial-gradient mask whose center is driven by --mx/--my. */
+.hero-name--fill {
+  position: absolute;
+  inset: 0;
+  color: #fff;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    circle var(--mask-radius) at var(--mx, -9999px) var(--my, -9999px),
+    #fff 0%,
+    #fff 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  mask-image: radial-gradient(
+    circle var(--mask-radius) at var(--mx, -9999px) var(--my, -9999px),
+    #fff 0%,
+    #fff 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+/* Touch devices have no hovering cursor, so the reveal effect makes no
+   sense there: show the name solid-filled outright instead. */
+@media (hover: none), (pointer: coarse) {
+  .hero-name--outline {
+    display: none;
+  }
+  .hero-name--fill {
+    position: relative;
+    inset: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 .hero-subtitle {
   margin: 30px 0 0;
@@ -823,6 +868,9 @@ h2 em,
   }
   .hero-system .system-clock-label {
     display: none;
+  }
+  .hero-name-wrap {
+    --mask-radius: 130px;
   }
   .hero-copy {
     padding: 50px 18px 50px;

@@ -9,7 +9,7 @@ src/
   api.ts                    # cliente HTTP contra portfolio-service y contact-service
   App.vue                   # orquestador: Lenis, fetch de datos, monta las secciones
   style.css                 # única hoja de estilos global
-  lib/gsap.ts                # gsap + ScrollTrigger + SplitText, registrados una sola vez
+  lib/gsap.ts                # gsap + ScrollTrigger, registrados una sola vez
   assets/
     photos/                  # 3 fotos personales (hero, "Sobre mí", contacto)
     projects/                 # capturas de los 3 proyectos, en .webp
@@ -46,7 +46,7 @@ Tres fuentes, todas por Google Fonts:
 
 ## Sistema de animación (GSAP)
 
-Todo pasa por `src/lib/gsap.ts`, que registra `ScrollTrigger` y `SplitText` una única vez (GSAP 3.13+ incluye ambos gratis para cualquier cuenta, ya no son plugins de pago). **Ningún componente importa `gsap` directamente** desde el paquete: siempre `import { gsap, ScrollTrigger, SplitText } from '../lib/gsap'`, para garantizar que los plugins ya están registrados sin depender del orden de imports.
+Todo pasa por `src/lib/gsap.ts`, que registra `ScrollTrigger` una única vez (GSAP 3.13+ lo incluye gratis para cualquier cuenta, ya no es un plugin de pago). **Ningún componente importa `gsap` directamente** desde el paquete: siempre `import { gsap, ScrollTrigger } from '../lib/gsap'`, para garantizar que el plugin ya está registrado sin depender del orden de imports.
 
 ### Lenis (smooth scroll)
 
@@ -60,9 +60,9 @@ gsap.ticker.lagSmoothing(0)
 
 Esto es imprescindible: sin ello, cada `ScrollTrigger` de la página mediría el scroll nativo (instantáneo) en vez del scroll suavizado de Lenis, y las animaciones se desincronizarían del movimiento real que ve la persona. **Importante para quien haga testing o debugging:** Lenis intercepta el scroll, así que `element.scrollIntoView()` o `window.scrollTo()` llamados directamente no funcionan de forma fiable (Lenis los sobreescribe en el siguiente frame) — hay que simular scroll real (`page.mouse.wheel(...)` en Playwright) o usar la propia API de Lenis.
 
-### Hero: SplitText + contadores + parallax (`HeroSection.vue`)
+### Hero: nombre con reveal por cursor + contadores + parallax (`HeroSection.vue`)
 
-- **Nombre**: `new SplitText(nameEl, { type: 'chars', charsClass: 'char' })` divide "JAVIER CRESPO MOLL" en un `<div class="char">` por letra, animados con `gsap.from(split.chars, { y: 100, opacity: 0, stagger: 0.03, duration: 0.8, ease: 'power4.out' })`. `charsClass` no es cosmético: sin él, GSAP no añade ninguna clase a los caracteres y ni el CSS (`will-change`) ni los tests de Playwright (`.hero-name .char`) tienen nada que seleccionar.
+- **Nombre**: ya no usa `SplitText` ni ninguna timeline de entrada — ese enfoque (dividir "JAVIER CRESPO MOLL" en `<div class="char">` y animarlos con `stagger`) daba renderizados intermitentes en Brave (recargas que se quedaban a medias, tipo "JAVI"). En su lugar, `.hero-name-wrap` superpone dos copias idénticas del texto: `.hero-name--outline` (contorno vía `-webkit-text-stroke`, `color: transparent`) visible desde el primer frame sin depender de ningún JS, y `.hero-name--fill` (blanco sólido) posicionada encima con `position: absolute; inset: 0`, revelada solo dentro de un círculo alrededor del cursor mediante un `mask-image: radial-gradient(...)` cuyo centro leen las variables CSS `--mx`/`--my`. Un listener `pointermove` en `.hero-name-wrap` alimenta dos `gsap.quickTo()` (uno por eje) sobre un objeto plano `pointerPos`, cuyo `onUpdate` escribe `--mx`/`--my` en el elemento — así el círculo interpola suavemente en vez de saltar a la posición exacta del ratón en cada frame. En dispositivos sin cursor real (`@media (hover: none), (pointer: coarse)`) el listener ni se registra y el CSS oculta el contorno, dejando el nombre siempre en relleno sólido.
 - **Subtítulo**: fade + slide con `delay: 0.4` respecto al mismo `onMounted`.
 - **Parallax de fondo**: `gsap.to(bgImageEl, { yPercent: 20, scrollTrigger: { trigger: heroEl, start: 'top top', end: 'bottom top', scrub: true } })`. Un `yPercent` menor que el desplazamiento real de scroll es lo que hace que la imagen "vaya más lenta" que el contenido.
 - **Stats**: cada `<StatCounter>` usa `useCounter`, que no construye su `ScrollTrigger` hasta que el valor final es mayor que 0 — necesario porque el número de tecnologías del stack llega de forma asíncrona desde `portfolio-service` y al montar el Hero todavía vale 0. `StatCounter` pasa el prop como `toRef(props, 'end')` (no `props.end` a secas) precisamente para que ese valor pueda seguir cambiando después del montaje.

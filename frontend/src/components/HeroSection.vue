@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { gsap, ScrollTrigger, SplitText } from '../lib/gsap'
+import { gsap, ScrollTrigger } from '../lib/gsap'
 import SystemClock from './SystemClock.vue'
 import Marquee from './Marquee.vue'
 import StatCounter from './StatCounter.vue'
@@ -13,22 +13,42 @@ const introText =
 
 const heroEl = ref<HTMLElement | null>(null)
 const bgImageEl = ref<HTMLElement | null>(null)
-const nameEl = ref<HTMLElement | null>(null)
+const nameWrapEl = ref<HTMLElement | null>(null)
+const nameFillEl = ref<HTMLElement | null>(null)
 const subtitleEl = ref<HTMLElement | null>(null)
 
-let split: SplitText | null = null
 let parallaxTween: gsap.core.Tween | null = null
+let quickX: ((value: number) => void) | null = null
+let quickY: ((value: number) => void) | null = null
+
+// Plain object used as a gsap.quickTo() target instead of the DOM node
+// itself: quickTo interpolates pointerPos.x/y toward the raw cursor
+// coordinates, and each update just writes the result into the fill
+// layer's --mx/--my custom properties, which the radial mask reads.
+const pointerPos = { x: -9999, y: -9999 }
+
+function applyMaskPosition() {
+  nameFillEl.value?.style.setProperty('--mx', `${pointerPos.x}px`)
+  nameFillEl.value?.style.setProperty('--my', `${pointerPos.y}px`)
+}
+
+function handlePointerMove(event: PointerEvent) {
+  const wrap = nameWrapEl.value
+  if (!wrap || !quickX || !quickY) return
+  const rect = wrap.getBoundingClientRect()
+  quickX(event.clientX - rect.left)
+  quickY(event.clientY - rect.top)
+}
 
 onMounted(() => {
-  if (nameEl.value) {
-    split = new SplitText(nameEl.value, { type: 'chars', charsClass: 'char' })
-    gsap.from(split.chars, {
-      y: 100,
-      opacity: 0,
-      stagger: 0.03,
-      duration: 0.8,
-      ease: 'power4.out',
-    })
+  // Only wire up the cursor-following reveal on devices with a real,
+  // precise pointer. On touch devices there's no hover, so the name is
+  // left fully filled via CSS (see .hero-name--fill in the media query).
+  const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  if (hasFinePointer && nameWrapEl.value) {
+    quickX = gsap.quickTo(pointerPos, 'x', { duration: 0.45, ease: 'power3', onUpdate: applyMaskPosition })
+    quickY = gsap.quickTo(pointerPos, 'y', { duration: 0.45, ease: 'power3', onUpdate: applyMaskPosition })
+    nameWrapEl.value.addEventListener('pointermove', handlePointerMove)
   }
 
   if (subtitleEl.value) {
@@ -58,7 +78,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  split?.revert()
+  nameWrapEl.value?.removeEventListener('pointermove', handlePointerMove)
   parallaxTween?.scrollTrigger?.kill()
   parallaxTween?.kill()
 })
@@ -76,7 +96,10 @@ onUnmounted(() => {
     </div>
 
     <div class="hero-copy">
-      <h1 ref="nameEl" class="hero-name">JAVIER CRESPO MOLL</h1>
+      <div ref="nameWrapEl" class="hero-name-wrap">
+        <h1 class="hero-name hero-name--outline">JAVIER CRESPO MOLL</h1>
+        <div ref="nameFillEl" class="hero-name hero-name--fill" aria-hidden="true">JAVIER CRESPO MOLL</div>
+      </div>
       <p ref="subtitleEl" class="hero-subtitle">DESARROLLADOR WEB FULLSTACK. JAVA · SPRING BOOT · VUE.JS.</p>
 
       <div class="hero-stats">

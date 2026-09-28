@@ -6,8 +6,8 @@ import { expect, test } from '@playwright/test'
  * exercises the full contact form flow through the real reverse proxy:
  * frontend -> contact-service -> Kafka -> notification-service.
  *
- * The page now runs Lenis (smooth scroll) and GSAP/ScrollTrigger/SplitText
- * (hero + scroll-reveal animations) on load. Playwright's own actionability
+ * The page now runs Lenis (smooth scroll) and GSAP/ScrollTrigger
+ * (scroll-reveal animations) on load. Playwright's own actionability
  * checks (auto-scroll-into-view, auto-wait) already handle interacting with
  * elements below the fold correctly even while those are running, but we
  * still give the hero's entrance animation a moment to settle before the
@@ -74,13 +74,13 @@ test.describe('Formulario de contacto', () => {
 })
 
 test.describe('Animaciones (GSAP + Lenis)', () => {
-  test('el hero divide el nombre en caracteres y los contadores cuentan hasta su valor real', async ({ page }) => {
+  test('el nombre del hero se muestra completo y los contadores cuentan hasta su valor real', async ({ page }) => {
     await waitForPageReady(page)
 
-    // SplitText wraps every character of "JAVIER CRESPO" in its own element;
-    // if this is empty, SplitText never ran.
-    const charCount = await page.locator('.hero-name .char').count()
-    expect(charCount).toBeGreaterThan(0)
+    // No entrance timeline to wait for anymore: the outline layer is plain
+    // CSS and must already show the full name.
+    await expect(page.locator('.hero-name--outline')).toHaveText('JAVIER CRESPO MOLL')
+    await expect(page.locator('.hero-name--fill')).toHaveText('JAVIER CRESPO MOLL')
 
     const stats = page.locator('.stat-value')
     await expect(stats.nth(0)).toHaveText('2', { timeout: 5000 })
