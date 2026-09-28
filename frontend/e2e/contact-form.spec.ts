@@ -77,10 +77,9 @@ test.describe('Animaciones (GSAP + Lenis)', () => {
   test('el nombre del hero se muestra completo y los contadores cuentan hasta su valor real', async ({ page }) => {
     await waitForPageReady(page)
 
-    // No entrance timeline to wait for anymore: the outline layer is plain
-    // CSS and must already show the full name.
-    await expect(page.locator('.hero-name--outline')).toHaveText('JAVIER CRESPO MOLL')
-    await expect(page.locator('.hero-name--fill')).toHaveText('JAVIER CRESPO MOLL')
+    // No entrance timeline to wait for anymore: the name is plain CSS and
+    // must already show the full text.
+    await expect(page.locator('.hero-name')).toHaveText('JAVIER CRESPO MOLL')
 
     const stats = page.locator('.stat-value')
     await expect(stats.nth(0)).toHaveText('2', { timeout: 5000 })

@@ -7,63 +7,39 @@ import { expect, test } from '@playwright/test'
  * full "JAVIER CRESPO MOLL", at a different cutoff each time, particularly
  * in Brave.
  *
- * The name no longer runs any entrance timeline: the outline layer
- * (`.hero-name--outline`) is plain CSS, present with its full text in the
- * very first frame, with nothing to complete or stall. This reloads the
- * page repeatedly within a single test and asserts the FULL name text is
- * present immediately after load on every single reload — not eventually,
- * since there is no animation left to "finish".
+ * The name runs no entrance timeline at all: `.hero-name` is plain CSS,
+ * present with its full text and solid white color in the very first
+ * frame, with nothing to complete or stall. This reloads the page
+ * repeatedly within a single test and asserts the FULL name text is
+ * present immediately after load on every single reload, and that the
+ * tesela composition (the Pryzm-style background tiles) is present too.
  */
-test('el nombre del hero se muestra completo e inmediato en recargas repetidas', async ({ page }) => {
+test('el nombre del hero y las teselas se muestran completos e inmediatos en recargas repetidas', async ({
+  page,
+}) => {
   const RELOADS = 12
   const results: string[] = []
 
   for (let i = 0; i < RELOADS; i++) {
     await page.goto('/', { waitUntil: 'load' })
-    await page.waitForSelector('.hero-name--outline', { state: 'visible' })
+    await page.waitForSelector('.hero-name', { state: 'visible' })
 
-    const outlineText = await page.locator('.hero-name--outline').textContent()
-    const fillText = await page.locator('.hero-name--fill').textContent()
+    const nameText = await page.locator('.hero-name').textContent()
+    results.push(nameText ?? '')
+    expect(nameText?.replace(/\s+/g, ' ').trim()).toBe('JAVIER CRESPO MOLL')
 
-    results.push(outlineText ?? '')
-    expect(outlineText?.replace(/\s+/g, ' ').trim()).toBe('JAVIER CRESPO MOLL')
-    expect(fillText?.replace(/\s+/g, ' ').trim()).toBe('JAVIER CRESPO MOLL')
+    // The name must be genuinely painted (not just present in the DOM at
+    // opacity/visibility 0) since it's the only thing guaranteeing it's
+    // legible with no JS animation involved.
+    await expect(page.locator('.hero-name')).toBeVisible()
 
-    // The outline layer must be genuinely painted (not just present in the
-    // DOM at opacity/visibility 0) since it's the only thing guaranteeing
-    // the name is legible with no JS animation involved.
-    await expect(page.locator('.hero-name--outline')).toBeVisible()
+    // The scattered tesela composition replacing the old hero photo must
+    // be present from the first frame too, with no entrance animation to
+    // wait on.
+    const tiles = page.locator('.hero-tile')
+    await expect(tiles.first()).toBeVisible()
+    expect(await tiles.count()).toBeGreaterThanOrEqual(3)
   }
 
   expect(results).toHaveLength(RELOADS)
-})
-
-test('el nombre se rellena de blanco siguiendo al cursor y no depende de una timeline de entrada', async ({
-  page,
-}) => {
-  await page.goto('/', { waitUntil: 'load' })
-  await page.waitForSelector('.hero-name-wrap', { state: 'visible' })
-
-  const wrap = page.locator('.hero-name-wrap')
-  const box = await wrap.boundingBox()
-  expect(box).not.toBeNull()
-  if (!box) return
-
-  // Move the mouse well outside the name first, then into its center, and
-  // confirm the fill layer's mask position (driven by gsap.quickTo via the
-  // --mx/--my custom properties) actually moved off its default off-screen
-  // value in response.
-  await page.mouse.move(box.x - 300, box.y - 300)
-  await page.waitForTimeout(50)
-
-  const centerX = box.x + box.width / 2
-  const centerY = box.y + box.height / 2
-  await page.mouse.move(centerX, centerY, { steps: 12 })
-
-  await page.waitForFunction(() => {
-    const fill = document.querySelector<HTMLElement>('.hero-name--fill')
-    if (!fill) return false
-    const mx = fill.style.getPropertyValue('--mx')
-    return mx !== '' && mx !== '-9999px'
-  })
 })

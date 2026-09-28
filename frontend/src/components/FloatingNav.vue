@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from '../lib/gsap'
-import { getLenis } from '../composables/useLenis'
+import { scrollToSection } from '../composables/useScrollTo'
 
 /**
  * Pill-shaped, fixed nav docked to the right edge. Hidden over the hero on
@@ -16,15 +16,6 @@ const links = [
 
 const navEl = ref<HTMLElement | null>(null)
 let tween: gsap.core.Tween | null = null
-
-function scrollToSection(target: string) {
-  const lenis = getLenis()
-  if (lenis) {
-    lenis.scrollTo(target, { offset: -20 })
-  } else {
-    document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' })
-  }
-}
 
 onMounted(() => {
   if (!navEl.value) return
