@@ -19,7 +19,21 @@
       "Bash(powershell -Command \"Stop-Process -Id 24036 -Force -ErrorAction SilentlyContinue\")",
       "Bash(node tmp-check-subtitle.mjs)",
       "Bash(powershell -Command \"Stop-Process -Id 19056 -Force -ErrorAction SilentlyContinue\")",
-      "Bash(node tmp-final-shot.mjs)"
+      "Bash(node tmp-final-shot.mjs)",
+      "Bash(npx vue-tsc *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx vite *)",
+      "Bash(echo \"started pid $!\")",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/hero-reload.spec.ts --project=chromium)",
+      "Bash(E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/navigation.spec.ts --project=chromium)",
+      "Bash(E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/contact-form.spec.ts --project=chromium -g \"hover sobre un proyecto|nombre del hero se muestra completo\")",
+      "Bash(cp /tmp/hero-check/visual.spec.ts e2e/_tmp-visual-check.spec.ts)",
+      "Bash(E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/_tmp-visual-check.spec.ts --project=chromium)",
+      "Bash(rm -rf /tmp/hero-check test-results playwright-report)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
+      "Bash(taskkill //F //PID 27540)",
+      "Bash(taskkill //F //PID 27304)"
     ]
   }
 }
