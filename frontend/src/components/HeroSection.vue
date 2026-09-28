@@ -13,7 +13,6 @@ const introText =
   'DESARROLLO PRODUCTOS DIGITALES CON ARQUITECTURAS REALES: MICROSERVICIOS, EVENTOS ASÍNCRONOS, BASES DE DATOS DISTRIBUIDAS.'
 
 const heroEl = ref<HTMLElement | null>(null)
-const subtitleEl = ref<HTMLElement | null>(null)
 const tileEls = ref<(HTMLElement | null)[]>([])
 
 const mobileQuery = window.matchMedia('(max-width: 760px)')
@@ -39,16 +38,6 @@ const tileTweens: gsap.core.Tween[] = []
 
 onMounted(() => {
   mobileQuery.addEventListener('change', onMobileChange)
-
-  if (subtitleEl.value) {
-    gsap.from(subtitleEl.value, {
-      opacity: 0,
-      y: 20,
-      duration: 0.6,
-      ease: 'power2.out',
-      delay: 0.4,
-    })
-  }
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (heroEl.value && !prefersReducedMotion) {
@@ -101,7 +90,7 @@ onUnmounted(() => {
       >
         <div class="hero-tile-frame">
           <img :src="tile.image" alt="" :class="['hero-tile-image', `hero-tile-image--${tile.kind}`]" />
-          <div class="project-preview-overlay"></div>
+          <div class="hero-tile-tint"></div>
         </div>
         <figcaption class="hero-tile-label">{{ tile.label }}</figcaption>
       </figure>
@@ -113,7 +102,7 @@ onUnmounted(() => {
       </div>
 
       <div class="hero-copy-right">
-        <p ref="subtitleEl" class="hero-subtitle">DESARROLLADOR WEB FULLSTACK. JAVA · SPRING BOOT · VUE.JS.</p>
+        <p class="hero-subtitle">DESARROLLADOR WEB FULLSTACK. JAVA · SPRING BOOT · VUE.JS.</p>
 
         <div class="hero-actions">
           <button type="button" class="button button-outline" @click="scrollToSection('#work')">

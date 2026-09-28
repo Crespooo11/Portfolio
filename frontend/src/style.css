@@ -9,6 +9,9 @@
   --muted: rgba(245, 245, 240, 0.6);
   --red: #c8102e;
   --line: rgba(245, 245, 240, 0.16);
+  /* Intensity of the hero teselas' red tint (multiply-blended, see
+     .hero-tile-tint). Single knob to darken/lighten it. */
+  --tile-tint: 0.15;
 }
 * {
   box-sizing: border-box;
@@ -293,6 +296,16 @@ nav a,
 /* Same treatment ProjectsSection uses for its own preview image. */
 .hero-tile-image--project {
   filter: grayscale(1) brightness(0.75) contrast(1.05);
+}
+/* Multiply (not normal-blend) so bright/white areas of the photo darken
+   toward red instead of averaging toward pink; black stays black. */
+.hero-tile-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  opacity: var(--tile-tint);
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 .hero-tile-label {
   margin: 0;
